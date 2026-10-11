@@ -4,6 +4,8 @@ SUBMODULE_DIR := localsend
 WEB_DIR := $(SUBMODULE_DIR)/web
 OUT_DIR := out
 BINARY_NAME := localsend-core
+# Target architectures; each produces $(BINARY_NAME)-<arch>
+ARCHES ?= amd64 arm64
 
 all: build
 
@@ -16,9 +18,12 @@ build:
 	mkdir -p "$(OUT_DIR)/web"
 	@sudo pacman -Syyu --noconfirm
 	@sudo pacman -Sy --noconfirm npm
-	cd "$(SUBMODULE_DIR)" && \
-		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-		go build -trimpath -ldflags "-s -w" -o "../$(OUT_DIR)/$(BINARY_NAME)" .
+	@for arch in $(ARCHES); do \
+		echo "building $(BINARY_NAME)-$$arch"; \
+		(cd "$(SUBMODULE_DIR)" && \
+			CGO_ENABLED=0 GOOS=linux GOARCH=$$arch \
+			go build -trimpath -ldflags "-s -w" -o "../$(OUT_DIR)/$(BINARY_NAME)-$$arch" .) || exit 1; \
+	done
 	@if [ -d "$(WEB_DIR)" ]; then \
 		cd "$(WEB_DIR)" && \
 		npm install && npm run build; \
@@ -26,4 +31,4 @@ build:
 	fi
 
 clean:
-	rm -f "$(OUT_DIR)/$(BINARY_NAME)"
+	rm -f $(addprefix $(OUT_DIR)/$(BINARY_NAME)-,$(ARCHES))

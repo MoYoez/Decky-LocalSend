@@ -1,4 +1,5 @@
 import os
+import platform
 import asyncio
 import subprocess
 import time
@@ -34,7 +35,7 @@ class Plugin:
         self.backend_port = 53317
         self.config_path = os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "localsend.yaml")
         self.upload_dir = os.path.join(decky.DECKY_PLUGIN_RUNTIME_DIR, "uploads")
-        self.binary_path = os.path.join(decky.DECKY_PLUGIN_DIR, "bin", "localsend-core")
+        self.binary_path = self._resolve_binary_path()
         self.settings_path = os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "plugin-settings.json")
 
         # Scan Config
@@ -513,6 +514,23 @@ class Plugin:
                 f"Error processing notification: {str(e)}"
             )
 
+    @staticmethod
+    def _resolve_binary_path() -> str:
+        bin_dir = os.path.join(decky.DECKY_PLUGIN_DIR, "bin")
+        arch_map = {
+            "x86_64": "amd64",
+            "amd64": "amd64",
+            "aarch64": "arm64",
+            "arm64": "arm64",
+        }
+        arch = arch_map.get(platform.machine().lower())
+        if arch:
+            arch_path = os.path.join(bin_dir, f"localsend-core-{arch}")
+            if os.path.exists(arch_path):
+                return arch_path
+        # Fallback: arch-less binary (older builds or manual installs)
+        return os.path.join(bin_dir, "localsend-core")
+
     def _is_running(self) -> bool:
         return self.process is not None and self.process.poll() is None
 
@@ -520,7 +538,9 @@ class Plugin:
         if self._is_running():
             return
         if not os.path.exists(self.binary_path):
-            raise FileNotFoundError(f"backend binary not found: {self.binary_path}")
+            raise FileNotFoundError(
+                f"backend binary not found: {self.binary_path} (arch: {platform.machine()})"
+            )
 
         self._ensure_dirs()
         log_path = os.path.join(decky.DECKY_PLUGIN_LOG_DIR, "localsend-backend.log")
