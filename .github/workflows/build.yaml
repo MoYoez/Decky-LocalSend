@@ -13,10 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
+
+      - name: Check version policy and release tag
+        run: |
+          python3 -m unittest discover -s tests -v
+          python3 scripts/check_release_version.py --tag "$RELEASE_TAG"
 
       - name: Download Decky CLI
         run: |
@@ -33,6 +40,7 @@ jobs:
       - name: Repack artifact
         run: |
           ZIP_FILE=$(ls /tmp/output/*.zip | head -1)
+          python3 scripts/check_release_version.py --tag "$RELEASE_TAG" --archive "$ZIP_FILE"
     
           rm -rf /tmp/unpacked /tmp/repack
           mkdir -p /tmp/unpacked /tmp/repack/decky-localsend
@@ -40,6 +48,7 @@ jobs:
           unzip -q "$ZIP_FILE" -d /tmp/unpacked
           SRC_DIR=$(find /tmp/unpacked -mindepth 1 -maxdepth 1 -type d | head -1)
           cp -R "$SRC_DIR"/* /tmp/repack/decky-localsend
+          python3 scripts/check_release_version.py --tag "$RELEASE_TAG" --package-json /tmp/repack/decky-localsend/package.json
           
       - name: Upload artifact
         uses: actions/upload-artifact@v4

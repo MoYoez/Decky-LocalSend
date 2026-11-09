@@ -45,7 +45,7 @@ Related Backend Repo: [MoYoez/localsend-go](https://github.com/MoYoez/localsend-
 > This plugin requires Decky Loader 3.0 or above.
 
 1. On your Steam Deck, install the plugin:
-   - Get the version from the Decky store (Decky Localsend 0.45)
+   - Get Decky Localsend from the Decky store
    - Or, download the latest release from the releases page
    - Or, install using a URL in Decky by entering:
 
@@ -137,6 +137,21 @@ npm build
 ### Build
 
 Please refer to [Github Action Build](.github/workflows/build.yaml)
+
+### Release versions
+
+Use a stable three-part version (`X.Y.Z`) in `package.json` and exactly `vX.Y.Z` for its release tag. The version inside the installable ZIP must match too. CI checks the source, tag pushes, built ZIP and repacked artifact before uploading the artifact; it does not publish a release.
+
+The historical `v0.45` release installs as `0.4.5`, which causes repeated update prompts in tag-based update checkers. The next candidate is `0.45.1` / `v0.45.1`, newer than both `0.4.5` and `0.45` (compared as `0.45.0`). Keep the existing tags and download links unchanged, and continue with versions greater than `0.45.0`; returning to `0.4.x` can break upgrades for clients tracking the old tag. Plugin identity and user settings stay the same.
+
+Before manually creating a release, run these checks from the repository root against the exact ZIP you will upload, replacing the tag and path as needed:
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 scripts/check_release_version.py --tag v0.45.1 --archive /path/to/decky-localsend.zip
+```
+
+Branch and pull request builds check versions without requiring a tag. A passing tag build does not validate a different ZIP uploaded manually later.
 
 ## Acknowledgments
 
