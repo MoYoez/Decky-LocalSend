@@ -44,7 +44,7 @@
 
 1. 在你的 Steam Deck 上安装本插件：  
 
-   - 进入 Decky 商店下载（Decky Localsend 0.45)
+   - 进入 Decky 商店下载 Decky Localsend
    - 或者从 release 下载最新 Release  
    - 或者在 Decky 中以 URL 格式安装 输入
   
@@ -138,6 +138,21 @@ npm build
 ### 编译
 
 参考 [Github Action Build](.github/workflows/build.yaml)
+
+### 发布版本
+
+`package.json` 使用三段正式版本号（`X.Y.Z`），Release 标签必须为对应的 `vX.Y.Z`，安装 ZIP 内的版本也必须一致。CI 会在上传 Artifact 前检查源码、标签推送、构建 ZIP 和重新打包后的版本；不会自动发布 Release。
+
+历史 `v0.45` 实际安装为 `0.4.5`，导致按标签比较版本的更新器反复提示更新。下一候选版本为 `0.45.1` / `v0.45.1`，高于 `0.4.5` 和 `0.45`（按 `0.45.0` 比较）。保留已有标签及下载链接，后续版本继续高于 `0.45.0`；回到 `0.4.x` 可能使跟踪旧标签的客户端无法正常升级。插件标识和用户设置保持不变。
+
+手动创建 Release 前，在仓库根目录针对准备上传的实际 ZIP 执行以下检查，并按需替换标签和路径：
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 scripts/check_release_version.py --tag v0.45.1 --archive /path/to/decky-localsend.zip
+```
+
+分支和 PR 构建无需标签，也会校验版本。标签构建通过不代表之后手动上传的其他 ZIP 已经通过检查。
 
 ## 鸣谢
 
